@@ -1,5 +1,6 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
-import 'package:english_words/english_words.dart';
 
 void main() => runApp(new MyApp());
 
@@ -7,100 +8,143 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new MaterialApp(
-      title: 'Welcome to Flutter',
+      // 应用名称
+      title: 'Flutter Demo',
+      // 主题
       theme: new ThemeData(
-        primaryColor: Colors.amber,
+        primarySwatch: Colors.orange,
       ),
-      home: new RandomWords(),
+      // 注册路由表
+      routes: {
+        '/': (context) => MyHomePage(title: 'Flutter Demo Home Page'), // 注册首页路由
+        'newRoute': (context) => NewRoute(),
+        'tipRoute': (context) => TipRoute(text: ModalRoute.of(context).settings.arguments),
+      },
+      // 应用首页路由
+      // home: new MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class RandomWords extends StatefulWidget {
+class MyHomePage extends StatefulWidget {
+  MyHomePage({Key key, this.title}) : super(key: key);
+  final String title;
+
   @override
-  createState() => new RandomWordsState();
+  _MyHomePageState createState() => new _MyHomePageState();
 }
 
-class RandomWordsState extends State<RandomWords> {
-  final _suggestions = <WordPair>[];
-  final _biggerFont = const TextStyle(fontSize: 16.0);
-  final _saved = new Set<WordPair>();
+class _MyHomePageState extends State<MyHomePage> {
+  int _counter = 0;
+
+  void _incrementCounter() {
+    setState(() {
+      _counter++;
+    });
+  }
+
+  void _nextPage() {
+    //导航到新路由   
+    // Navigator.push(context,
+    //   MaterialPageRoute(builder: (context) {
+    //     return NewRoute();
+    //   })
+    // );
+    Navigator.pushNamed(context, 'newRoute');
+  }
 
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
       appBar: new AppBar(
-        title: new Text('Welcome to Miligao Flutter App'),
-        actions: <Widget>[
-          new IconButton(icon: new Icon(Icons.list), onPressed: _pushSaved)
-        ],
+        title: new Text(widget.title),
       ),
-      body: _buildSuggestions(),
-    );
-  }
-
-  void _pushSaved() {
-    Navigator.of(context).push(
-      new MaterialPageRoute(
-        builder: (context) {
-          final tiles = _saved.map((e) => new ListTile(
-            title: new Text(
-              e.asPascalCase,
-              style: _biggerFont,
-            )
-          ));
-          final divided = ListTile
-            .divideTiles(
-              context: context,
-              tiles: tiles,
-            )
-            .toList();
-
-          return new Scaffold(
-            appBar: new AppBar(
-              title: new Text('Saved Suggestions'),
+      body: new Center(
+        child: new Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            new Text(
+              'You have pushed the button this many times:',
             ),
-            body: new ListView(children: divided),
-          );
-        },
+            new Text(
+              '$_counter',
+              style: Theme.of(context).textTheme.headline4,
+            ),
+            new FlatButton(
+              onPressed: _nextPage,
+              child: new Text('Open new route'),
+              textColor: Colors.blue,
+            )
+          ],
+        ),
+      ),
+      floatingActionButton: new FloatingActionButton(
+        onPressed: _incrementCounter,
+        tooltip: 'Increment',
+        child: new Icon(Icons.add),
+      ), // This trailing comma makes auto-formatting nicer for build methods.
+    );
+  }
+}
+
+class NewRoute extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("New route"),
+      ),
+      body: Center(
+        child: RaisedButton(
+          onPressed: () async {
+            // 打开`TipRoute`，并等待返回结果
+            // var result = await Navigator.push(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (context) {
+            //       return TipRoute(
+            //         // 路由参数
+            //         text: "提示提示提示提示提示提示",
+            //       );
+            //     },
+            //   ),
+            // );
+            var result = await Navigator.pushNamed(context, 'tipRoute', arguments: '你好不好啊?');
+            //输出`TipRoute`路由返回结果
+            print("路由返回值: $result");
+          },
+          child: Text("打开提示页"),
+        ),
       ),
     );
   }
+}
 
-  Widget _buildSuggestions() {
-    return new ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16.0),
-      itemBuilder: (context, i) {
-        if (i.isOdd) return new Divider();
-        final index = i ~/ 2;
-        if (index >= _suggestions.length) {
-          _suggestions.addAll(generateWordPairs().take(10));
-        }
-        return _buildRow(_suggestions[index]);
-      },
-    );
-  }
+class TipRoute extends StatelessWidget {
+  TipRoute({Key key, this.text}) : super(key: key);
+  final String text;
 
-  Widget _buildRow(WordPair pair) {
-    final alreadySaved = _saved.contains(pair);
-    return new ListTile(
-      title: new Text(
-        pair.asPascalCase,
-        style: _biggerFont,
+  @override
+  Widget build(BuildContext context) {
+    var args = ModalRoute.of(context).settings.arguments;
+    print(args);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("提示"),
       ),
-      trailing: new Icon(
-        alreadySaved ? Icons.favorite : Icons.favorite_border,
-        color: alreadySaved ? Colors.red : null,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+            Text(text),
+            RaisedButton(
+              onPressed: () => Navigator.pop(context, "我是返回值"),
+              child: Text("返回"),
+            )
+          ]
+        )
       ),
-      onTap: () {
-        setState(() {
-          if (alreadySaved) {
-            _saved.remove(pair);
-          } else {
-            _saved.add(pair);
-          }
-        });
-      },
     );
   }
 }
